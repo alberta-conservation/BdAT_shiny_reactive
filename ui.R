@@ -1,0 +1,205 @@
+tagList(
+  navbarPage(
+    theme = bslib::bs_theme(version = 5, bootswatch = "lux"),
+    id = 'tabs',
+    collapsible = TRUE,
+    
+    # Describes the top header bar with tabs
+    header = tagList(
+      tags$head(tags$link(href = "css/style_blank_II.css", rel = "stylesheet")
+      )
+    ),
+    title = HTML('<div style="margin-top: 0px;"><a href="https://github.com/alberta-conservation" target="_blank"><img src="abc-program-logo.png" height="50"></a></div>'),
+    windowTitle = "OSR Biodiversity Assessment tool",
+    tabPanel("Welcome", value = 'intro'),
+    tabPanel("Species description", value = 'spp'),
+    tabPanel("Vulnerability assessment", value = 'vulnerability'),
+    tabPanel("Risk Assessment", value = 'risk'),
+    tabPanel("Recommendations", value = 'recommendations'), 
+    navbarMenu("Species of Special Concern", 
+               tabPanel("Overview", value = "soc"), 
+               tabPanel("Pileated Woodpecker", value = "piwo"), 
+               tabPanel("Yellow Rail", value = "yera"), 
+               tabPanel("Rusty Blackbird", value = "rubl"), 
+               tabPanel("Canadian Toad", value = "cato"), 
+               tabPanel("Sharp-tailed Grouse", value = "stgr"), 
+               tabPanel("Whooping Crane", value = "whcr"), 
+    )
+  ),
+  
+  tags$div(
+    
+    useShinyjs(),
+    
+    conditionalPanel(
+      condition="input.tabs == 'intro'",
+      div(style = "background-color: white; width: 100vw; margin: 0; padding: 0; display: flex; justify-content: center;",
+          tags$img(src = "osr.png", height = "300px",  style = "display: block; object-fit: contain; width: 100%; max-width: none;")),
+    
+      fluidRow(
+        column(4, layout_sidebar(
+          sidebar = sidebar(
+            position = "left",
+            selectInput("spp", "Select a species", choices = spp_tbl$CommonName, selected = "Black-throated Green Warbler")
+            
+          )
+        )),
+        
+        column(8, div(id = "markdown-content", includeMarkdown("Rmd/text_intro_tab.Rmd")))
+      )
+    ), 
+  
+  # Layout for species tab
+  conditionalPanel(
+    condition = "input.tabs == 'spp'",
+    fluidRow(
+      column(12, 
+             conditionalPanel(
+               condition = "input.tabs == 'spp'",
+               div(
+                 id = "markdown-content", style = "padding: 10px;", uiOutput("spp_account")
+               )
+             )
+          )
+      )
+    ), 
+  # Layout for vulnerability and risk tab s
+  conditionalPanel(
+    condition = "input.tabs == 'vulnerability' || input.tabs == 'risk'", 
+    fluidRow(
+      column(3, 
+             conditionalPanel(
+               condition = "input.tabs == 'vulnerability'", 
+               tabsetPanel(
+                 tabPanel("Tool", 
+                          checkboxGroupInput(
+                            inputId = "prod_field",
+                            label = "Choose the Oil Sands Area:",
+                            choices = c("All", "Athabasca", "Cold Lake", "Peace River Area 1", "Peace River Area 2"),
+                            selected = "Athabasca" # Optional: pre-select an item
+                          ), 
+                          selectInput(
+                            inputId = "app_holder", 
+                            label = "Select a lease holder:", 
+                            choices = c("All", "Canada Natural Resources Limited", "Suncor Energy Inc.", "Surmont Energy Ltd."), 
+                            selected = "Suncor Energy Inc."
+                          ), 
+                          actionButton(inputId = "co_prodField", 
+                                       label = "Show selected AOI and leases", 
+                                       icon = icon(name = "fas fa-crow", lib = "font-awesome"), 
+                                       style="width:200px;"
+                          ), 
+                          
+                          actionButton(inputId = "render_report", 
+                                       label = "Create report", 
+                                       style="margin-top: 20px; width: 200px;"
+                          )
+                 ), 
+                 tabPanel("Instructions", 
+                          icon = icon("circle-info"), 
+                          div(style = "color: white !important; font-size: 14px; font-family: 'Cormorant Garamond', serif;", 
+                              includeMarkdown("./Rmd/gtext_exposure.Rmd")
+                          )
+                 )
+               )
+             ), 
+             conditionalPanel(
+               condition = "input.tabs == 'risk'", 
+               tabsetPanel(
+                 tabPanel("Tool", 
+                          checkboxGroupInput(
+                            inputId = "prod_field",
+                            label = "Choose the Oil Sands Area:",
+                            choices = c("All", "Athabasca", "Cold Lake", "Peace River Area 1", "Peace River Area 2"),
+                            selected = "Athabasca" # Optional: pre-select an item
+                          ), 
+                          selectInput(
+                            inputId = "app_holder", 
+                            label = "Select a lease holder:", 
+                            choices = c("All", "Canada Natural Resources Limited", "Suncor Energy Inc.", "Surmont Energy Ltd."), 
+                            selected = "Suncor Energy Inc."
+                          ), 
+                          actionButton(inputId = "co_prodField", 
+                                       label = "Show selected AOI and leases", 
+                                       icon = icon(name = "fas fa-crow", lib = "font-awesome"), 
+                                       style="width:200px"), 
+                          
+                          actionButton(inputId = "render_report", 
+                                       label = "Create report", 
+                                       style="margin-top: 20px; width: 200px;"
+                          )
+                 ), 
+                 tabPanel("Instructions", 
+                          icon = icon("circle-info"), 
+                          div(style = "color: white !important; font-size: 14px; font-family: 'Cormorant Garamond', serif;", 
+                              includeMarkdown("./Rmd/gtext_risk.Rmd")
+                          )
+                 )
+               )
+             )
+      ), 
+      column(6, 
+             conditionalPanel(
+               condition = "input.tabs == 'vulnerability'", 
+               tabsetPanel(id ="centerPanel",
+                           tabPanel("Reference Exposure", 
+                                    leafletOutput(outputId = "map", width = "100%", height = "400px") 
+                           ),
+                           tabPanel("Current Exposure",
+                                    leafletOutput(outputId = "map_current", width = "100%", height = "400px")
+                           ), 
+                           tabPanel("Methods", 
+                                    div(id = "markdown-content", includeMarkdown("Rmd/text_vulnerability_methods.Rmd"))
+                           )
+               )
+             ), 
+             conditionalPanel(
+               condition = "input.tabs == 'risk'", 
+               tabsetPanel(
+                 tabPanel("Density distributions", 
+                          tags$img(src = "data/oven_density.png", width = "100%", height = "auto")
+                 ),
+                 tabPanel("Risk estimates",
+                          tags$img(src = "data/oven_decline_5pct.png", width = "100%", height = "auto")
+                 ) , 
+                 tabPanel("Methods", 
+                          div(id = "markdown-content", includeMarkdown("Rmd/text_risk_methods.Rmd"))
+                 )
+               )
+             )
+      ), 
+      column(3, 
+             conditionalPanel(
+               condition = "input.tabs == 'vulnerability'",
+               div(id = "markdown-content", includeMarkdown("Rmd/data_download_tab.md")),
+               actionButton(inputId = "dwnld_dta", 
+                            label = "Download Data", 
+                            style="width: 250px;"), 
+               
+               actionButton(inputId = "dwnld_report", 
+                            label = "Download report", 
+                            style="margin-top: 20px;  width: 250px;")
+             ), 
+             conditionalPanel(
+               condition = "input.tabs == 'risk'",
+               div(id = "markdown-content", includeMarkdown("Rmd/risk_download_tab.md")), 
+               actionButton(inputId = "dwnld_dta", label = "Download Data", icon = icon(name = "fas fa-crow", lib = "font-awesome"), style="width:250px"), 
+               
+               actionButton(inputId = "dwnld_report", 
+                            label = "Download report", 
+                            style="margin-top: 20px;  width: 250px;")
+             )
+      ), 
+      column(12,  
+             conditionalPanel(
+               condition = "input.tabs == 'vulnerability'",
+               div(id = "markdown-content", includeMarkdown("Rmd/text_vulnerability_tab.md"))
+             )
+      )
+    )
+  )
+  )
+)
+
+
+
