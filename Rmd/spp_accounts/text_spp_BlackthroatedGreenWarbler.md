@@ -28,9 +28,9 @@ runtime: shiny
 
 ## **CONSERVATION STATUS**
 
-* <abbr title="Alberta's Endangered Species Conservation Committee">COSEWIC</abbr> Status: None
+* <abbr title="Committee on the Status of Endangered Wildlife in Canada">COSEWIC</abbr> Status: None
 
-* <abbr title="Alberta's Endangered Species Conservation Committee">ESCC</abbr> Status in  Alberta: Special Concern 
+* <abbr title="Alberta's Endangered Species Conservation Committee">ESCC</abbr> Status in  Alberta: None 
 
 * <abbr title="Government of Alberta's general status of wildlife species">General</abbr> Status in  Alberta: Sensitive 
 
@@ -46,7 +46,7 @@ runtime: shiny
 
 ## Overview
 
-The black-throated green warbler (BTNW) is a forest songbird species that is generally in the OSR. This species is most strongly associated with mature mixed deciduous and white spruce stands in the boreal forest and foothills regions of Alberta. 
+The Black-throated Green Warbler (BTNW) is a forest songbird species that is generally uncommon in the OSR. This species is most strongly associated with mature mixed deciduous and white spruce stands in the boreal forest and foothills regions of Alberta. 
 
 <br> 
 

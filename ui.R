@@ -37,7 +37,7 @@ tagList(
           tags$img(src = "osr.png", height = "300px",  style = "display: block; object-fit: contain; width: 100%; max-width: none;")),
     
       fluidRow(
-        column(4, layout_sidebar(
+        column(3, layout_sidebar(
           sidebar = sidebar(
             position = "left",
             selectInput("spp", "Select a species", choices = spp_tbl$CommonName, selected = "Black-throated Green Warbler")
@@ -45,7 +45,7 @@ tagList(
           )
         )),
         
-        column(8, div(id = "markdown-content", includeMarkdown("Rmd/text_intro_tab.Rmd")))
+        column(9, div(id = "markdown-content", includeMarkdown("Rmd/text_intro_tab.md")))
       )
     ), 
   
@@ -63,7 +63,7 @@ tagList(
           )
       )
     ), 
-  # Layout for vulnerability and risk tab s
+  # Layout for vulnerability and risk tabs
   conditionalPanel(
     condition = "input.tabs == 'vulnerability' || input.tabs == 'risk'", 
     fluidRow(
@@ -75,13 +75,13 @@ tagList(
                           checkboxGroupInput(
                             inputId = "prod_field",
                             label = "Choose the Oil Sands Area:",
-                            choices = c("All", "Athabasca", "Cold Lake", "Peace River Area 1", "Peace River Area 2"),
+                            choices = c("Athabasca", "Cold Lake", "Peace River Area 1", "Peace River Area 2"),
                             selected = "Athabasca" # Optional: pre-select an item
                           ), 
                           selectInput(
                             inputId = "app_holder", 
                             label = "Select a lease holder:", 
-                            choices = c("All", "Canada Natural Resources Limited", "Suncor Energy Inc.", "Surmont Energy Ltd."), 
+                            choices = lease_holders$lease_holder, 
                             selected = "Suncor Energy Inc."
                           ), 
                           actionButton(inputId = "co_prodField", 
@@ -93,7 +93,8 @@ tagList(
                           actionButton(inputId = "render_report", 
                                        label = "Create report", 
                                        style="margin-top: 20px; width: 200px;"
-                          )
+                          ),
+                          actionButton("clear_btn", "Clear Selected data")
                  ), 
                  tabPanel("Instructions", 
                           icon = icon("circle-info"), 
@@ -110,13 +111,13 @@ tagList(
                           checkboxGroupInput(
                             inputId = "prod_field",
                             label = "Choose the Oil Sands Area:",
-                            choices = c("All", "Athabasca", "Cold Lake", "Peace River Area 1", "Peace River Area 2"),
+                            choices = c("Athabasca" = "ATHABASCA", "Cold Lake" = "COLD LAKE", "Peace River Area 1" = "PEACE RIVER 1", "Peace River Area 2" = "PEACE RIVER 2"),
                             selected = "Athabasca" # Optional: pre-select an item
                           ), 
                           selectInput(
                             inputId = "app_holder", 
                             label = "Select a lease holder:", 
-                            choices = c("All", "Canada Natural Resources Limited", "Suncor Energy Inc.", "Surmont Energy Ltd."), 
+                            choices = c("Canada Natural Resources Limited", "Suncor Energy Inc.", "Surmont Energy Ltd."), 
                             selected = "Suncor Energy Inc."
                           ), 
                           actionButton(inputId = "co_prodField", 

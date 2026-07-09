@@ -20,12 +20,12 @@ body {
 
 /* Fix markdown styling */
 #markdown-content {
-  width: 70%;                /* Adjust as needed */
+  width: 90%;                /* Adjust as needed */
   font-family: Cambria, Georgia, serif;
   color: white !important;
   font-size: 18px !important;   /* Adjust this value as needed */
-  padding: 20px;                    /* adds space inside all sides */
-    box-sizing: border-box;           /* ensures padding doesn't overflow */
+  /* padding: 20px;                    adds space inside all sides */
+    /* box-sizing: border-box;           /* ensures padding doesn't overflow */
 }
 
 h1, h2, h3 {

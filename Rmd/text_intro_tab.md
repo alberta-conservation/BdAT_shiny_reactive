@@ -25,3 +25,10 @@ There are three distinct components of the OSR Biodiversity Assessment Tool:
 **4. Risk Assessment:** If available, model-based estimates of the probability (i.e. *Risk*) of specific levels of population loss under different scenarios of oil sands development and assumptions about other disturbance and succession processes. 
 
 **4. Recommendations:** Recommendations for mitigating risks to species populations based on known sensitivities and risk levels, based on the mitigation hierarchy (Avoid, Minimize, Remediate, Offset) 
+
+**5. Species of Special Concern:** Detailed reports on Species of Special Concern in the OSR
+
+## Biodiversity Assessment Tool workflow diagram 
+
+![](../www/app_design.png){width=100%}
+
