@@ -15,6 +15,9 @@ load("www/data/lease_current_exposure_metrics.rda")
 load("www/data/lease_reference_exposure_metrics.rda")
 load("www/data/osr_current_exposure_metrics.rda")
 load("www/data/osr_reference_exposure_metrics.rda")
+load("www/data/risk_results_list.rda")
+load("www/data/osr_risk_data.rda")
+vulnerability_table <- read.csv("www/vulnerability_data.csv")
 bcr_exp <- st_transform(bam_exposure_metrics, crs = 4326)
 lease_exp_current <- st_transform(lease_exp_current, crs = 4326) |> 
   mutate(osa = replace_values(osa, "ATHABASCA" ~ "Athabasca", "COLD LAKE" ~ "Cold Lake", "PEACE RIVER AREA 1" ~ "Peace River Area 1", "PEACE RIVER AREA 2" ~ "Peace River Area 2"))
@@ -22,3 +25,26 @@ lease_exp_ref <- st_transform(lease_exp_ref, crs = 4326) |>
   mutate(osa = replace_values(osa, "ATHABASCA" ~ "Athabasca", "COLD LAKE" ~ "Cold Lake", "PEACE RIVER AREA 1" ~ "Peace River Area 1", "PEACE RIVER AREA 2" ~ "Peace River Area 2"))
 
 lease_holders <- data.frame(lease_holder = levels(as.factor(lease_exp_ref$lease_holder)))
+risk_leases <- data.frame(lease_name = levels(as.factor(risk_results_list[[1]]$lease_name)))
+risk_species <- data.frame(CommonName = vulnerability_table$CommonName[which(vulnerability_table$speciesCode %in% names(risk_results_list))])
+
+# Data and functions for quantitative risk assessment 
+scenario_names <- c("baseline", "baseline_OS", "climate", "climate_OS")
+cbbPalette <- c("#56B4E9", "#009E73", "#F0E442", "#D55E00", "#0072B2", "#CC79A7", "#000000", "#E69F00")
+decline_list <- seq(0.01, 0.2, 0.01)
+
+pctDecline_fxn_sim <- function(spp, baseline_scenario, comp_scenario, prop_decline, num.sim){
+  baseline <- spp %>% filter(scenario == baseline_scenario) 
+  comp <- spp %>% filter(scenario == comp_scenario) 
+  
+  risk <- mean(sapply(1:num.sim, function(x){
+    b <- sample(baseline$pop_size, 1)
+    c <- sample(comp$pop_size, 1)
+    ifelse(c/b < (1 - prop_decline), 1, 0)
+  }))
+  
+  return(risk)
+}
+
+
+

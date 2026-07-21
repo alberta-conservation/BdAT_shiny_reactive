@@ -1,23 +1,41 @@
 # Define server logic
 server <- function(input, output, session){
+  
+  ################################################################################################
+  # RELOAD
+  observeEvent(input$reload_btn, {
+    showModal(
+      modalDialog(
+        title = "Confirm reload",
+        tagList(
+          p("You are about to reload the application."),
+          p("Any unsaved work or pending downloads may be lost."),
+          p("Do you want to reload the app?")
+        ),
+        footer = tagList(
+          modalButton("No"),
+          actionButton("confirm_reload", "Yes", class = "btn-danger")
+        ),
+        easyClose = FALSE
+      )
+    )
+  })
+  
+  observeEvent(input$confirm_reload, {
+    removeModal()
+    session$reload()
+  })
+  
   # Get the pathway to Rmd file for the selected species account
-  spp_file <- reactive({paste0("Rmd/spp_accounts/text_spp_", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, ".md")}) 
+  # spp_file <- reactive({paste0("Rmd/spp_accounts/text_spp_", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, ".md")}) 
   
   # Filter the exposure data to the selected species (bcr and osr), production field, and lease holder (osr) for the reference and current conditions
   exp_bcr <- reactive({bcr_exp |> 
       filter(spp_code == spp_tbl[spp_tbl$CommonName == input$spp, ]$speciesCode) |> 
       mutate(osr_pct = round(osr_pct*100, 2), osr_index = round(osr_index, 2))
     })
-  exp_ref <- reactive({lease_exp_ref |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder)})
-  exp_current <- reactive({lease_exp_current |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder)})
   
-  # Load the species account
-  output$spp_account <- renderUI({
-    req(spp_file)
-    includeMarkdown(spp_file())
-  })
   
-
   # Create the reference exposure map for the BCR using the BAM map
   output$map <- renderLeaflet({
     r <- rast(paste0("www/bam_v5_4326/", spp_tbl[spp_tbl$CommonName == input$spp, ]$speciesCode, "_can61_2020.tif"))
@@ -79,14 +97,18 @@ server <- function(input, output, session){
   
   # Create the updated OSR maps with selected species, production field, and lease holder
   observeEvent(input$co_prodField, {
+    
     r1 <- rast(paste0("www/spp_pred_reference/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_osr_reference.tif"))
     rc <- rast(paste0("www/spp_pred_current/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_osr_current.tif"))
     pf <- osr |> filter(Area_Name == input$prod_field)
+    
+    exp_ref <- reactive({lease_exp_ref |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder)})
+    exp_current <- reactive({lease_exp_current |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder)})
     b <- st_bbox(osr)
     cf <- exp_ref()
-    cf_pt <- st_centroid(cf)
+    cf_pt <- st_centroid(exp_ref())
     cfc <- exp_current()
-    cfc_pt <- st_centroid(cfc)
+    cfc_pt <- st_centroid(exp_current())
     
     # Create the labels for the leases from the data files
     labels <- sprintf(
@@ -101,6 +123,7 @@ server <- function(input, output, session){
     
     # Create the maps for the reference exposure
     leafletProxy("map") |> 
+      clearMarkers() |> 
       clearShapes() |> 
       addMapPane(name = "ground", zIndex=380) |> 
       addProviderTiles("CartoDB.Positron", group="baseMap") |> 
@@ -130,6 +153,7 @@ server <- function(input, output, session){
     
     # Create the maps for the current exposure
     leafletProxy("map_current") |> 
+      clearMarkers() |> 
       clearShapes() |> 
       addMapPane(name = "ground", zIndex=380) |> 
       addProviderTiles("CartoDB.Positron", group="baseMap") |> 
@@ -156,6 +180,91 @@ server <- function(input, output, session){
         data = cfc_pt, 
         label = ~labels_current
       )
-  }) 
+  })
+  
+  ## Generate the vulnerability report
+  # Reactive value to track if the report is ready
+
+  observeEvent(input$render_report, {
+    # 1. Perform data processing or heavy calculations here
+    showNotification("Processing data for your report...", type = "message")
+    
+    exp_ref <- reactive({lease_exp_ref |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder)})
+    r1 <- rast(paste0("www/spp_pred_reference/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_osr_reference.tif"))
+    r2 <- rast(paste0("www/exposure_maps/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_grid_exposure.tif"))
+    dat <- reactive({
+      vulnerability_table |> filter(SpeciesID == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID)
+    })
+    
+    ## Generate report
+    output$vulnerability_report <- renderUI(
+      
+      rmarkdown::render(
+        input = "www/vulnerability_report.Rmd", 
+        output_format = "html_document", 
+        output_file = "vulnerability.html", 
+        output_dir = "www", 
+        quiet = TRUE,
+        envir = new.env(parent = globalenv())
+      )
+    )
+    
+  })
+  
+  observeEvent(input$spp_lease, {
+    showNotification("Processing data for your report...", type = "message")
+    
+    spp_code <- reactive({vulnerability_table$speciesCode[which(vulnerability_table$CommonName == input$risk_spp)]}) 
+    risk_results <- risk_results_list[which(names(risk_results_list) == spp_code())][[1]] 
+    osr_risk <- osr_risk_data[which(names(osr_risk_data) == spp_code())][[1]] 
+    risk_area <- reactive({input$lease_name}) 
+    
+    if(risk_area() == "Total area"){
+      risk_stats <- osr_risk
+    }else if(risk_area() == "All leases"){
+      risk_stats <- risk_results |> 
+        group_by(scenario, iter) |> 
+        summarise(pop_size = sum(pop_size))
+    }else{
+      risk_stats <- risk_results |> 
+        filter(lease_name == risk_area())
+    }
+    
+    output$dens_plot <- renderPlot({
+      ggplot(data = risk_stats) + geom_density(aes(x = pop_size/1e6, fill = scenario), alpha = 0.4) + 
+        theme_classic() + 
+        scale_fill_manual(values = cbbPalette[1:4], name = "Scenario", labels = c("Baseline, non-OS", "Baseline, OS", "Climate change, non-OS", "Climate change, OS")) + 
+        xlab("\nPopulation size (millions)") + ylab("Probability density\n") + theme(axis.title.x = element_text(size = 20), axis.title.y = element_text(size = 20), 
+                                                                                     axis.text = element_text(size = 15), legend.text = element_text(size = 15), 
+                                                                                     legend.title = element_text(size = 20), 
+                                                                                     plot.title = element_text(size = 20)) + 
+        ggtitle("Density distributions of future population size estimates under uncertainty.")
+    })
+    
+    dectab <- do.call(cbind, lapply(2:length(scenario_names), function(i){
+      sapply(1:length(decline_list), function(j){
+        pctDecline_fxn_sim(spp = risk_stats, baseline_scenario = scenario_names[1], comp_scenario = scenario_names[i], prop_decline = decline_list[j], num.sim = 1000)
+      })
+    }))
+    
+    output$decline_plot <- renderPlot({
+      d <- dectab
+      colnames(d) <- scenario_names[2:4] 
+      
+      decline <- data.frame(decline = decline_list*100, d)
+      spp_decline <- decline %>% 
+        gather(scenario, response, baseline_OS:climate_OS, factor_key = TRUE)
+      
+      ggplot(data = spp_decline, aes(x = decline, y = response, group = scenario)) + 
+        geom_line(aes(colour = scenario), linewidth = 1) + 
+        scale_colour_manual(values = cbbPalette[2:4], name = "Comparison \nscenario", labels = c("Baseline, OS", "Climate change", "Climate change, OS")) + 
+        theme_classic() + xlab("% Population loss relative to \nhistoric climate with no Oil Sands development") + ylab("Probability\n") + 
+        theme(axis.title.x = element_text(size = 20), axis.title.y = element_text(size = 20), 
+              axis.text = element_text(size = 15), legend.text = element_text(size = 15), 
+              legend.title = element_text(size = 20)) + ylim(c(0, 1))
+    }) 
+    
+  })
+  
   
 }
