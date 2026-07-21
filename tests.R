@@ -1,7 +1,7 @@
 
 library(shiny)
 library(tidyverse)
-library(rmarkdwon)
+library(rmarkdown)
 
 load("www/data/sysdata.rda")
 

@@ -192,12 +192,7 @@ tagList(
       column(12,  
              conditionalPanel(
                condition = "input.tabs == 'vulnerability'", 
-               div(style = "display:flex; justify-content: space-between; align-items: center;",
-                   h3("Vulnerability Report"),
-                   downloadButton("download_report", "Download report")
-               ),
-               hr(),
-               uiOutput("vulnerability_report")
+               
              ) # conditionalPanel(
       ) # column(12,
     )
