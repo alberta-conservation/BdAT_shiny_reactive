@@ -202,7 +202,7 @@ tagList(
       ) # column(12,
     )
   )
-  ),
+  ), 
   
   tags$head(
     tags$style(HTML("
@@ -218,8 +218,6 @@ tagList(
   )
   
 )
-
-
 
 
 

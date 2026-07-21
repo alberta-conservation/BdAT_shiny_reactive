@@ -258,7 +258,7 @@ server <- function(input, output, session){
       ggplot(data = spp_decline, aes(x = decline, y = response, group = scenario)) + 
         geom_line(aes(colour = scenario), linewidth = 1) + 
         scale_colour_manual(values = cbbPalette[2:4], name = "Comparison \nscenario", labels = c("Baseline, OS", "Climate change", "Climate change, OS")) + 
-        theme_classic() + xlab("% Population loss relative to \nhistoric climate with no Oil Sands development") + ylab("Probability\n") + 
+        theme_classic() + xlab("% Population loss relative to historic \nclimate with no Oil Sands development") + ylab("Probability\n") + 
         theme(axis.title.x = element_text(size = 20), axis.title.y = element_text(size = 20), 
               axis.text = element_text(size = 15), legend.text = element_text(size = 15), 
               legend.title = element_text(size = 20)) + ylim(c(0, 1))
