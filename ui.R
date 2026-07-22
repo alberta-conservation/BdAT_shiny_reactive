@@ -117,15 +117,15 @@ tagList(
                             choices = c("Total area", "All leases", risk_leases$lease_name), 
                             selected = "Suncor Energy Inc."
                           ), 
-                          actionButton(inputId = "spp_lease", 
+                          div(actionButton(inputId = "spp_lease", 
                                        label = "Show selected species and area", 
                                        icon = icon(name = "fas fa-crow", lib = "font-awesome"), 
-                                       style="width:200px"), 
+                                       style="width:200px")), 
                           
-                          actionButton(inputId = "render_risk_report", 
+                          div(actionButton(inputId = "render_risk_report", 
                                        label = "Create report", 
                                        style="margin-top: 20px; width: 200px;"
-                          )
+                          ))
                  ), 
                  tabPanel("Instructions", 
                           icon = icon("circle-info"), 
