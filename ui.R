@@ -71,7 +71,7 @@ tagList(
                             inputId = "spp", 
                             label = "Select a species", 
                             choices = spp_tbl$CommonName, 
-                            selected = "Ovenbird"),
+                            selected = "Black-throated Green Warbler"),
                           checkboxGroupInput(
                             inputId = "prod_field",
                             label = "Choose the Oil Sands Area:",

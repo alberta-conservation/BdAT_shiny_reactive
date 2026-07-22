@@ -183,12 +183,12 @@ server <- function(input, output, session){
   })
   
   ## Generate the vulnerability report
-  # Reactive value to track if the report is ready
 
   observeEvent(input$render_report, {
-    # 1. Perform data processing or heavy calculations here
+    # Notification bar
     showNotification("Processing data for your report...", type = "message")
     
+    # Get rasters and datasets for report (esp_ref and r1 are repeated from above)
     exp_ref <- reactive({lease_exp_ref |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder)})
     r1 <- rast(paste0("www/spp_pred_reference/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_osr_reference.tif"))
     r2 <- rast(paste0("www/exposure_maps/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_grid_exposure.tif"))
