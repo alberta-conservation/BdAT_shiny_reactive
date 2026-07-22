@@ -6,9 +6,9 @@ tagList(
     
     # Describes the top header bar with tabs
     header = tagList(
-      tags$head(tags$link(href = "css/style_blank_II.css", rel = "stylesheet")
+      tags$head(tags$link(href = "css/style_blank_II.css", rel = "stylesheet"),
+                tags$style(HTML(".navbar-nav {margin-left: 40px;}"))
       ), 
-      
       tags$div(
         style = "position: absolute; right: 20px; top: 10px;",
         actionButton(
@@ -20,7 +20,7 @@ tagList(
         style = "position: absolute; right: 20px; top: 10px;" # adjust position
       )
     ),
-    title = HTML('<div style="margin-top: 0px;"><a href="https://github.com/alberta-conservation" target="_blank"><img src="abc-program-logo.png" height="50"></a></div>'),
+    title = HTML('<div style="margin-top: 0px;"><a href="https://github.com/alberta-conservation" target="_blank"><img src="abc-program-logo.png" height="80px"></a></div>'),
     windowTitle = "OSR Biodiversity Assessment tool",
     tabPanel("Welcome", value = 'intro'),
     tabPanel("Vulnerability assessment", value = 'vulnerability'),
@@ -84,16 +84,15 @@ tagList(
                             choices = lease_holders$lease_holder, 
                             selected = "Suncor Energy Inc."
                           ), 
-                          actionButton(inputId = "co_prodField", 
+                          div(actionButton(inputId = "co_prodField", 
                                        label = "Show selected AOI and leases", 
                                        icon = icon(name = "fas fa-crow", lib = "font-awesome"), 
                                        style="width:200px;"
-                          ), 
-                          
-                          actionButton(inputId = "render_report", 
+                          )), 
+                          div(actionButton(inputId = "render_report", 
                                        label = "Create report", 
                                        style="margin-top: 20px; width: 200px;"
-                          )
+                          ))
                  ), 
                  tabPanel("Instructions", 
                           icon = icon("circle-info"), 
