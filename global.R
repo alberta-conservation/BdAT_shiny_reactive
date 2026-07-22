@@ -1,10 +1,21 @@
 options(repos = c(CRAN = "https://cran.rstudio.com"))
 
-required_packages <- c("bslib", "leaflet", "markdown", "rmarkdown", "sf", "shiny", 
-                       "shinydashboard", "shinyjs", "terra", "tidyverse")
+#required_packages <- c("bslib", "leaflet", "markdown", "rmarkdown", "sf", "shiny", 
+#                       "shinydashboard", "shinyjs", "terra", "tidyverse")
 
 
-invisible(lapply(required_packages, library, character.only = TRUE))
+#invisible(lapply(required_packages, library, character.only = TRUE))
+library(leaflet)
+library(bslib)
+library(markdown)
+library(rmarkdown)
+library(sf)
+library(shiny)
+library(shinydashboard)
+library(shinyjs)
+library(terra)
+library(tidyverse)
+
 
 load("www/data/sysdata.rda")
 
@@ -19,11 +30,35 @@ load("www/data/risk_results_list.rda")
 load("www/data/osr_risk_data.rda")
 vulnerability_table <- read.csv("www/vulnerability_data.csv")
 bcr_exp <- st_transform(bam_exposure_metrics, crs = 4326)
-lease_exp_current <- st_transform(lease_exp_current, crs = 4326) |> 
-  mutate(osa = replace_values(osa, "ATHABASCA" ~ "Athabasca", "COLD LAKE" ~ "Cold Lake", "PEACE RIVER AREA 1" ~ "Peace River Area 1", "PEACE RIVER AREA 2" ~ "Peace River Area 2"))
-lease_exp_ref <- st_transform(lease_exp_ref, crs = 4326) |> 
-  mutate(osa = replace_values(osa, "ATHABASCA" ~ "Athabasca", "COLD LAKE" ~ "Cold Lake", "PEACE RIVER AREA 1" ~ "Peace River Area 1", "PEACE RIVER AREA 2" ~ "Peace River Area 2"))
+#lease_exp_current <- st_transform(lease_exp_current, crs = 4326) |> 
+#  mutate(osa = replace_values(osa, "ATHABASCA" ~ "Athabasca", "COLD LAKE" ~ "Cold Lake", "PEACE RIVER AREA 1" ~ "Peace River Area 1", "PEACE RIVER AREA 2" ~ "Peace River Area 2"))
 
+lease_exp_current <- lease_exp_current |>
+  st_transform(crs = 4326) |>
+  mutate(
+    osa = case_match(
+      osa,
+      "ATHABASCA" ~ "Athabasca",
+      "COLD LAKE" ~ "Cold Lake",
+      "PEACE RIVER AREA 1" ~ "Peace River Area 1",
+      "PEACE RIVER AREA 2" ~ "Peace River Area 2",
+      .default = osa
+    )
+  )
+#lease_exp_ref <- st_transform(lease_exp_ref, crs = 4326) |> 
+#  mutate(osa = replace_values(osa, "ATHABASCA" ~ "Athabasca", "COLD LAKE" ~ "Cold Lake", "PEACE RIVER AREA 1" ~ "Peace River Area 1", "PEACE RIVER AREA 2" ~ "Peace River Area 2"))
+lease_exp_ref <- lease_exp_ref |>
+  st_transform(crs = 4326) |>
+  mutate(
+    osa = case_match(
+      osa,
+      "ATHABASCA" ~ "Athabasca",
+      "COLD LAKE" ~ "Cold Lake",
+      "PEACE RIVER AREA 1" ~ "Peace River Area 1",
+      "PEACE RIVER AREA 2" ~ "Peace River Area 2",
+      .default = osa
+    )
+  )
 lease_holders <- data.frame(lease_holder = levels(as.factor(lease_exp_ref$lease_holder)))
 risk_leases <- data.frame(lease_name = levels(as.factor(risk_results_list[[1]]$lease_name)))
 risk_species <- data.frame(CommonName = vulnerability_table$CommonName[which(vulnerability_table$speciesCode %in% names(risk_results_list))])
