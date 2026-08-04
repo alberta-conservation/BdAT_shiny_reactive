@@ -183,8 +183,7 @@ server <- function(input, output, session){
   })
   
   ## Generate the vulnerability report
-
-  observeEvent(input$render_report, {
+  observeEvent(input$render_report_old, {
     # Notification bar
     showNotification("Processing data for your report...", type = "message")
     
@@ -196,19 +195,76 @@ server <- function(input, output, session){
       vulnerability_table |> filter(SpeciesID == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID)
     })
     
+    params <- list(
+      bird = input$spp,
+      SpeciesID = spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID,
+      osa = input$prod_field,
+      lease_holder = input$app_holder,
+      reference_rast = r1$Species,
+      exposure_rast = r2$exp
+    )
     ## Generate report
     output$vulnerability_report <- renderUI(
-      
       rmarkdown::render(
         input = "www/vulnerability_report.Rmd", 
         output_format = "html_document", 
         output_file = "vulnerability.html", 
         output_dir = "www", 
+        params = params,
         quiet = TRUE,
         envir = new.env(parent = globalenv())
       )
     )
     
+  })
+  
+  report_ready <- reactiveVal(FALSE)
+  
+  observeEvent(input$render_report, {
+    
+    showNotification("Processing data for your report...", type = "message")
+    
+    # Get rasters and datasets for report (esp_ref and r1 are repeated from above)
+    exp_ref <- reactive({lease_exp_ref |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder)})
+    r1 <- rast(paste0("www/spp_pred_reference/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_osr_reference.tif"))
+    r2 <- rast(paste0("www/exposure_maps/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_grid_exposure.tif"))
+    dat <- reactive({
+      vulnerability_table |> filter(SpeciesID == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID)
+    })
+    
+    params <- list(
+      bird = input$spp,
+      SpeciesID = spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID,
+      osa = input$prod_field,
+      lease_holder = input$app_holder,
+      reference_rast = r1$Species,
+      exposure_rast = r2$exp
+    )
+    
+    rmarkdown::render(
+      input = "www/vulnerability_report.Rmd",
+      output_format = "html_document",
+      output_file = "vulnerability.html",
+      output_dir = "www",
+      params = params,
+      quiet = TRUE,
+      envir = new.env(parent = globalenv())
+    )
+    
+    report_ready(TRUE)
+  })
+  
+  
+  output$vulnerability_report <- renderUI({
+    
+    req(report_ready())
+    
+    tags$iframe(
+      src = "vulnerability.html",
+      width = "100%",
+      height = "1000px",
+      frameborder = 0
+    )
   })
   
   observeEvent(input$spp_lease, {

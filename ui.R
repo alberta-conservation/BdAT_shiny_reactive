@@ -141,7 +141,11 @@ tagList(
                condition = "input.tabs == 'vulnerability'", 
                tabsetPanel(id ="centerPanel",
                            tabPanel("Reference Exposure", 
-                                    leafletOutput(outputId = "map", width = "100%", height = "400px") 
+                                    leafletOutput(outputId = "map", width = "100%", height = "400px"),
+                                    br(),
+                                    hr(),
+                                    br(),
+                                    uiOutput("vulnerability_report")
                            ),
                            tabPanel("Current Exposure",
                                     leafletOutput(outputId = "map_current", width = "100%", height = "400px")
