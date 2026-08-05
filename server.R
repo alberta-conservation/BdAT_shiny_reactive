@@ -1,6 +1,13 @@
 # Define server logic
 server <- function(input, output, session){
   
+  exp_ref <- reactiveVal(NULL)
+  exp_current <- reactiveVal(NULL)
+  spp_code <- reactiveVal(NULL)
+  exp_bcr <- reactiveVal(NULL)
+  report_version <- reactiveVal(FALSE)
+  report_ready <- reactiveVal(FALSE)
+  risk_area <- reactiveVal(NULL)
   ################################################################################################
   # RELOAD
   observeEvent(input$reload_btn, {
@@ -30,11 +37,16 @@ server <- function(input, output, session){
   # spp_file <- reactive({paste0("Rmd/spp_accounts/text_spp_", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, ".md")}) 
   
   # Filter the exposure data to the selected species (bcr and osr), production field, and lease holder (osr) for the reference and current conditions
-  exp_bcr <- reactive({bcr_exp |> 
+  observe({
+    exp_bcr(bcr_exp |> 
       filter(spp_code == spp_tbl[spp_tbl$CommonName == input$spp, ]$speciesCode) |> 
       mutate(osr_pct = round(osr_pct*100, 2), osr_index = round(osr_index, 2))
-    })
+    )
+  })
   
+  observeEvent(input$spp, {
+    report_ready(FALSE)
+  })
   
   # Create the reference exposure map for the BCR using the BAM map
   output$map <- renderLeaflet({
@@ -102,8 +114,8 @@ server <- function(input, output, session){
     rc <- rast(paste0("www/spp_pred_current/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_osr_current.tif"))
     pf <- osr |> filter(Area_Name == input$prod_field)
     
-    exp_ref <- reactive({lease_exp_ref |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder)})
-    exp_current <- reactive({lease_exp_current |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder)})
+    exp_ref(lease_exp_ref |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder))
+    exp_current(lease_exp_current |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder))
     b <- st_bbox(osr)
     cf <- exp_ref()
     cf_pt <- st_centroid(exp_ref())
@@ -182,50 +194,22 @@ server <- function(input, output, session){
       )
   })
   
-  ## Generate the vulnerability report
-  observeEvent(input$render_report_old, {
-    # Notification bar
-    showNotification("Processing data for your report...", type = "message")
-    
-    # Get rasters and datasets for report (esp_ref and r1 are repeated from above)
-    exp_ref <- reactive({lease_exp_ref |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder)})
-    r1 <- rast(paste0("www/spp_pred_reference/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_osr_reference.tif"))
-    r2 <- rast(paste0("www/exposure_maps/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_grid_exposure.tif"))
-    dat <- reactive({
-      vulnerability_table |> filter(SpeciesID == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID)
-    })
-    
-    params <- list(
-      bird = input$spp,
-      SpeciesID = spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID,
-      osa = input$prod_field,
-      lease_holder = input$app_holder,
-      reference_rast = r1$Species,
-      exposure_rast = r2$exp
-    )
-    ## Generate report
-    output$vulnerability_report <- renderUI(
-      rmarkdown::render(
-        input = "www/vulnerability_report.Rmd", 
-        output_format = "html_document", 
-        output_file = "vulnerability.html", 
-        output_dir = "www", 
-        params = params,
-        quiet = TRUE,
-        envir = new.env(parent = globalenv())
-      )
-    )
-    
-  })
-  
-  report_ready <- reactiveVal(FALSE)
   
   observeEvent(input$render_report, {
     
+    if(isTRUE(input$co_prodField ==0)){
+      showModal(modalDialog(
+        title = "Please confirm selected AOI and lease",
+        "Prior to generate the report, you must confirm selected AOI and leases.",
+        easyClose = TRUE,
+        footer = NULL)
+      )
+    }
+    req(isTRUE(input$co_prodField >0))
+    
     showNotification("Processing data for your report...", type = "message")
     
     # Get rasters and datasets for report (esp_ref and r1 are repeated from above)
-    exp_ref <- reactive({lease_exp_ref |> filter(spp == spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID & osa == input$prod_field & lease_holder == input$app_holder)})
     r1 <- rast(paste0("www/spp_pred_reference/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_osr_reference.tif"))
     r2 <- rast(paste0("www/exposure_maps/", spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID, "_grid_exposure.tif"))
     dat <- reactive({
@@ -238,7 +222,9 @@ server <- function(input, output, session){
       osa = input$prod_field,
       lease_holder = input$app_holder,
       reference_rast = r1$Species,
-      exposure_rast = r2$exp
+      exposure_rast = r2$exp,
+      current_tbl = exp_current(),
+      reference_tbl = exp_ref()
     )
     
     rmarkdown::render(
@@ -250,8 +236,8 @@ server <- function(input, output, session){
       quiet = TRUE,
       envir = new.env(parent = globalenv())
     )
-    
     report_ready(TRUE)
+    report_version(report_version() + 1)
   })
   
   
@@ -260,7 +246,10 @@ server <- function(input, output, session){
     req(report_ready())
     
     tags$iframe(
-      src = "vulnerability.html",
+      src = paste0(
+        "vulnerability.html?v=",
+        report_version()
+      ),
       width = "100%",
       height = "1000px",
       frameborder = 0
@@ -270,10 +259,10 @@ server <- function(input, output, session){
   observeEvent(input$spp_lease, {
     showNotification("Processing data for your report...", type = "message")
     
-    spp_code <- reactive({vulnerability_table$speciesCode[which(vulnerability_table$CommonName == input$risk_spp)]}) 
+    spp_code(vulnerability_table$speciesCode[which(vulnerability_table$CommonName == input$risk_spp)]) 
     risk_results <- risk_results_list[which(names(risk_results_list) == spp_code())][[1]] 
     osr_risk <- osr_risk_data[which(names(osr_risk_data) == spp_code())][[1]] 
-    risk_area <- reactive({input$lease_name}) 
+    risk_area(input$lease_name) 
     
     if(risk_area() == "Total area"){
       risk_stats <- osr_risk
