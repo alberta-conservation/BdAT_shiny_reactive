@@ -177,19 +177,14 @@ tagList(
                actionButton(inputId = "dwnld_dta", 
                             label = "Download Data", 
                             style="width: 250px;"), 
-               
-               actionButton(inputId = "dwnld_report", 
-                            label = "Download report", 
-                            style="margin-top: 20px;  width: 250px;")
+               uiOutput("download_report_ui")
              ), 
              conditionalPanel(
                condition = "input.tabs == 'risk'",
                div(id = "markdown-content", includeMarkdown("Rmd/risk_download_tab.md")), 
                actionButton(inputId = "dwnld_dta", label = "Download Data", icon = icon(name = "fas fa-crow", lib = "font-awesome"), style="width:250px"), 
                
-               actionButton(inputId = "dwnld_report", 
-                            label = "Download report", 
-                            style="margin-top: 20px;  width: 250px;")
+               downloadButton("dwnld_report", "Download report", style="margin-top: 20px;  width: 250px;")
              )
       ), 
       column(12,  

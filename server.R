@@ -221,10 +221,11 @@ server <- function(input, output, session){
       SpeciesID = spp_tbl[spp_tbl$CommonName == input$spp, ]$SpeciesID,
       osa = input$prod_field,
       lease_holder = input$app_holder,
-      reference_rast = r1$Species,
-      exposure_rast = r2$exp,
-      current_tbl = exp_current(),
-      reference_tbl = exp_ref()
+      reference_rast = r1,
+      exposure_rast = r2,
+      current_sf = exp_current(),
+      reference_sf = exp_ref(),
+      production_field = osr |> filter(Area_Name == input$prod_field)
     )
     
     rmarkdown::render(
@@ -311,5 +312,25 @@ server <- function(input, output, session){
     
   })
   
+  output$download_report_ui <- renderUI({
+    req(report_ready())
+    downloadButton("dwd_report", "Download report", style="margin-top: 20px;  width: 250px;")
+  })
   
+  output$dwd_report <- downloadHandler(
+    filename = function() {
+      paste0("Vulnerability_Assessment_", gsub(" ", "_", input$spp),".pdf")
+    },
+    contentType = "application/pdf",
+    content = function(file) {
+      req(isTRUE(report_ready()))
+      html_file <- file.path("www", "vulnerability.html")
+      webshot2::webshot(
+        url = html_file,
+        file = file,
+        vwidth = 1200,
+        vheight = 900
+      )
+    }
+  )
 }
